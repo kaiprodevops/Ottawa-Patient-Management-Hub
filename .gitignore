@@ -1,0 +1,14 @@
+# IntelliJ 编译产物
+.idea/
+*.iml
+out/
+gen/
+
+# 构建工具产物 (Maven/Gradle)
+target/
+build/
+.gradle/
+
+# 敏感信息
+.env
+*.log
