@@ -812,13 +812,13 @@
                   "aws:cdk:cloudformation:props": {
                     "allocatedStorage": "20",
                     "copyTagsToSnapshot": true,
-                    "dbInstanceClass": "db.t2.micro",
+                    "dbInstanceClass": "db.t3.micro",
                     "dbName": "auth-service-db",
                     "dbSubnetGroupName": {
                       "Ref": "AuthServiceDBSubnetGroupCFE5A552"
                     },
                     "engine": "postgres",
-                    "engineVersion": "17.2",
+                    "engineVersion": "16.4",
                     "masterUsername": "admin_user",
                     "masterUserPassword": {
                       "Fn::Join": [
@@ -1007,13 +1007,13 @@
                   "aws:cdk:cloudformation:props": {
                     "allocatedStorage": "20",
                     "copyTagsToSnapshot": true,
-                    "dbInstanceClass": "db.t2.micro",
+                    "dbInstanceClass": "db.t3.micro",
                     "dbName": "patient-service-db",
                     "dbSubnetGroupName": {
                       "Ref": "PatientServiceDBSubnetGroupCED49D16"
                     },
                     "engine": "postgres",
-                    "engineVersion": "17.2",
+                    "engineVersion": "16.4",
                     "masterUsername": "admin_user",
                     "masterUserPassword": {
                       "Fn::Join": [
@@ -1059,7 +1059,7 @@
                 "healthCheckConfig": {
                   "type": "TCP",
                   "failureThreshold": 3,
-                  "ipAddress": {
+                  "fullyQualifiedDomainName": {
                     "Fn::GetAtt": [
                       "AuthServiceDBC6B688BA",
                       "Endpoint.Address"
@@ -1089,7 +1089,7 @@
                 "healthCheckConfig": {
                   "type": "TCP",
                   "failureThreshold": 3,
-                  "ipAddress": {
+                  "fullyQualifiedDomainName": {
                     "Fn::GetAtt": [
                       "PatientServiceDBB84F9BF9",
                       "Endpoint.Address"
@@ -1125,12 +1125,12 @@
                       "Ref": "PatientManagementVPCPrivateSubnet2Subnet8A2E409C"
                     }
                   ],
-                  "instanceType": "kafka.m5.xlarge",
+                  "instanceType": "kafka.m5.large",
                   "brokerAzDistribution": "DEFAULT"
                 },
                 "clusterName": "kafka-cluster",
-                "kafkaVersion": "2.8.0",
-                "numberOfBrokerNodes": 1
+                "kafkaVersion": "3.7.x",
+                "numberOfBrokerNodes": 2
               }
             },
             "constructInfo": {
@@ -1303,21 +1303,6 @@
                             }
                           },
                           {
-                            "name": "SPRING_DATASOURCE_PASSWORD",
-                            "value": {
-                              "Fn::Join": [
-                                "",
-                                [
-                                  "{{resolve:secretsmanager:",
-                                  {
-                                    "Ref": "AuthServiceDBSecretAttachmentF30406A9"
-                                  },
-                                  ":SecretString:password::}}"
-                                ]
-                              ]
-                            }
-                          },
-                          {
                             "name": "SPRING_JPA_HIBERNATE_DDL_AUTO",
                             "value": "update"
                           },
@@ -1331,12 +1316,28 @@
                           },
                           {
                             "name": "SPRING_KAFKA_BOOTSTRAP_SERVERS",
-                            "value": "localhost.localstack.cloud:4510, localhost.localstack.cloud:4511, localhost.localstack.cloud:4512"
+                            "value": "host.docker.internal:4510, host.docker.internal:4511, host.docker.internal:4512"
+                          }
+                        ],
+                        "secrets": [
+                          {
+                            "name": "SPRING_DATASOURCE_PASSWORD",
+                            "valueFrom": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  {
+                                    "Ref": "AuthServiceDBSecretAttachmentF30406A9"
+                                  },
+                                  ":password::"
+                                ]
+                              ]
+                            }
                           }
                         ]
                       }
                     ],
-                    "cpu": "256",
+                    "cpu": "512",
                     "executionRoleArn": {
                       "Fn::GetAtt": [
                         "AuthServiceTaskExecutionRoleA1258495",
@@ -1344,7 +1345,7 @@
                       ]
                     },
                     "family": "localstackAuthServiceTask4114E6CA",
-                    "memory": "512",
+                    "memory": "1024",
                     "networkMode": "awsvpc",
                     "requiresCompatibilities": [
                       "FARGATE"
@@ -1431,6 +1432,16 @@
                                       "AuthServiceLogGroup34125B38",
                                       "Arn"
                                     ]
+                                  }
+                                },
+                                {
+                                  "Action": [
+                                    "secretsmanager:GetSecretValue",
+                                    "secretsmanager:DescribeSecret"
+                                  ],
+                                  "Effect": "Allow",
+                                  "Resource": {
+                                    "Ref": "AuthServiceDBSecretAttachmentF30406A9"
                                   }
                                 }
                               ],
@@ -1681,12 +1692,12 @@
                         "environment": [
                           {
                             "name": "SPRING_KAFKA_BOOTSTRAP_SERVERS",
-                            "value": "localhost.localstack.cloud:4510, localhost.localstack.cloud:4511, localhost.localstack.cloud:4512"
+                            "value": "host.docker.internal:4510, host.docker.internal:4511, host.docker.internal:4512"
                           }
                         ]
                       }
                     ],
-                    "cpu": "256",
+                    "cpu": "512",
                     "executionRoleArn": {
                       "Fn::GetAtt": [
                         "BillingServiceTaskExecutionRole11FE8DE2",
@@ -1694,7 +1705,7 @@
                       ]
                     },
                     "family": "localstackBillingServiceTaskAB0446C6",
-                    "memory": "512",
+                    "memory": "1024",
                     "networkMode": "awsvpc",
                     "requiresCompatibilities": [
                       "FARGATE"
@@ -2026,12 +2037,12 @@
                         "environment": [
                           {
                             "name": "SPRING_KAFKA_BOOTSTRAP_SERVERS",
-                            "value": "localhost.localstack.cloud:4510, localhost.localstack.cloud:4511, localhost.localstack.cloud:4512"
+                            "value": "host.docker.internal:4510, host.docker.internal:4511, host.docker.internal:4512"
                           }
                         ]
                       }
                     ],
-                    "cpu": "256",
+                    "cpu": "512",
                     "executionRoleArn": {
                       "Fn::GetAtt": [
                         "AnalyticsServiceTaskExecutionRoleBAF654B2",
@@ -2039,7 +2050,7 @@
                       ]
                     },
                     "family": "localstackAnalyticsServiceTask353A5B10",
-                    "memory": "512",
+                    "memory": "1024",
                     "networkMode": "awsvpc",
                     "requiresCompatibilities": [
                       "FARGATE"
@@ -2403,21 +2414,6 @@
                             }
                           },
                           {
-                            "name": "SPRING_DATASOURCE_PASSWORD",
-                            "value": {
-                              "Fn::Join": [
-                                "",
-                                [
-                                  "{{resolve:secretsmanager:",
-                                  {
-                                    "Ref": "PatientServiceDBSecretAttachment90D77B03"
-                                  },
-                                  ":SecretString:password::}}"
-                                ]
-                              ]
-                            }
-                          },
-                          {
                             "name": "SPRING_JPA_HIBERNATE_DDL_AUTO",
                             "value": "update"
                           },
@@ -2431,16 +2427,32 @@
                           },
                           {
                             "name": "SPRING_KAFKA_BOOTSTRAP_SERVERS",
-                            "value": "localhost.localstack.cloud:4510, localhost.localstack.cloud:4511, localhost.localstack.cloud:4512"
+                            "value": "host.docker.internal:4510, host.docker.internal:4511, host.docker.internal:4512"
                           },
                           {
                             "name": "BILLING_SERVICE_ADDRESS",
                             "value": "host.docker.internal"
                           }
+                        ],
+                        "secrets": [
+                          {
+                            "name": "SPRING_DATASOURCE_PASSWORD",
+                            "valueFrom": {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  {
+                                    "Ref": "PatientServiceDBSecretAttachment90D77B03"
+                                  },
+                                  ":password::"
+                                ]
+                              ]
+                            }
+                          }
                         ]
                       }
                     ],
-                    "cpu": "256",
+                    "cpu": "512",
                     "executionRoleArn": {
                       "Fn::GetAtt": [
                         "PatientServiceTaskExecutionRole3782903B",
@@ -2448,7 +2460,7 @@
                       ]
                     },
                     "family": "localstackPatientServiceTask2770C053",
-                    "memory": "512",
+                    "memory": "1024",
                     "networkMode": "awsvpc",
                     "requiresCompatibilities": [
                       "FARGATE"
@@ -2535,6 +2547,16 @@
                                       "PatientServiceLogGroup4A5C3809",
                                       "Arn"
                                     ]
+                                  }
+                                },
+                                {
+                                  "Action": [
+                                    "secretsmanager:GetSecretValue",
+                                    "secretsmanager:DescribeSecret"
+                                  ],
+                                  "Effect": "Allow",
+                                  "Resource": {
+                                    "Ref": "PatientServiceDBSecretAttachment90D77B03"
                                   }
                                 }
                               ],
@@ -2783,13 +2805,13 @@
                             "value": "http://host.docker.internal:4005"
                           },
                           {
-                            "name": "STRING_PROFILES_ACTIVE",
+                            "name": "SPRING_PROFILES_ACTIVE",
                             "value": "prod"
                           }
                         ]
                       }
                     ],
-                    "cpu": "256",
+                    "cpu": "512",
                     "executionRoleArn": {
                       "Fn::GetAtt": [
                         "APIGatewayTaskDefinitionExecutionRole555CBA21",
@@ -2797,7 +2819,7 @@
                       ]
                     },
                     "family": "localstackAPIGatewayTaskDefinitionF109B4B7",
-                    "memory": "512",
+                    "memory": "1024",
                     "networkMode": "awsvpc",
                     "requiresCompatibilities": [
                       "FARGATE"

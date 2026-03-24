@@ -1,0 +1,4 @@
+### Delete an entity
+DELETE http://lb-1bd7dcdb.elb.localhost.localstack.cloud:4566/api/patients/e1b214b9-466f-434c-9ae8-d12f5791e808
+Authorization: Bearer {{token}}
+###
