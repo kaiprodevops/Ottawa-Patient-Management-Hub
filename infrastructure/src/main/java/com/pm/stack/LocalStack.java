@@ -64,7 +64,7 @@ public class LocalStack extends Stack {
     }
 
     private CfnHealthCheck createDbHealthCheck(DatabaseInstance db, String id) {
-        return CfnHealthCheck.Builder.create(this, id).healthCheckConfig(CfnHealthCheck.HealthCheckConfigProperty.builder().type("TCP").port(Token.asNumber(db.getDbInstanceEndpointPort())).ipAddress(db.getDbInstanceEndpointAddress()).requestInterval(30).failureThreshold(3).build()).build();
+        return CfnHealthCheck.Builder.create(this, id).healthCheckConfig(CfnHealthCheck.HealthCheckConfigProperty.builder().type("TCP").port(Token.asNumber(db.getDbInstanceEndpointPort())).fullyQualifiedDomainName(db.getDbInstanceEndpointAddress()).requestInterval(30).failureThreshold(3).build()).build();
     }
 
     private CfnCluster createCluster() {
@@ -97,16 +97,24 @@ public class LocalStack extends Stack {
             envVars.putAll(additionalEnvVars);
         }
 
+        Map<String, software.amazon.awscdk.services.ecs.Secret> containerSecrets = new HashMap<>();
+
         if (db != null) {
             envVars.put("SPRING_DATASOURCE_URL", "jdbc:postgresql://%s:%s/%s-db".formatted(db.getDbInstanceEndpointAddress(), db.getDbInstanceEndpointPort(), imageName));
             envVars.put("SPRING_DATASOURCE_USERNAME", "admin_user");
-            envVars.put("SPRING_DATASOURCE_PASSWORD", db.getSecret().secretValueFromJson("password").toString());
+            containerSecrets.put("SPRING_DATASOURCE_PASSWORD",
+                    software.amazon.awscdk.services.ecs.Secret.fromSecretsManager(db.getSecret(), "password"));
             envVars.put("SPRING_JPA_HIBERNATE_DDL_AUTO", "update");
             envVars.put("SPRING_SQL_INIT_MODE", "always");
             envVars.put("SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT", "60000");
         }
 
         containerOptions.environment(envVars);
+
+        if (!containerSecrets.isEmpty()) {
+            containerOptions.secrets(containerSecrets);
+        }
+
         taskDefinition.addContainer(imageName + "Container", containerOptions.build());
 
         return FargateService.Builder.create(this, id).cluster(ecsCluster).taskDefinition(taskDefinition).assignPublicIp(false).serviceName(imageName).build();
@@ -119,7 +127,7 @@ public class LocalStack extends Stack {
         ContainerDefinitionOptions containerOptions = ContainerDefinitionOptions.builder()
                 .image(ContainerImage.fromRegistry("api-gateway"))
                 .environment(Map.of(
-                        "STRING_PROFILES_ACTIVE", "prod",
+                        "SPRING_PROFILES_ACTIVE", "prod",
                         "AUTH_SERVICE_URL", "http://host.docker.internal:4005"))
                 .portMappings(List.of(4004).stream().map(port -> PortMapping.builder().containerPort(port).hostPort(port).protocol(Protocol.TCP).build()).toList())
                 .logging(LogDriver.awsLogs(AwsLogDriverProps.builder().logGroup(LogGroup.Builder.create(this, "ApiGatewayLogGroup").logGroupName("/ecs/api-gateway").removalPolicy(RemovalPolicy.DESTROY).retention(RetentionDays.ONE_DAY).build()).streamPrefix("api-gateway").build()))

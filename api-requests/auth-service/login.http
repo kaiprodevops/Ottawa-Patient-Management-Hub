@@ -1,6 +1,9 @@
 ### Login request to retrieve a token
 
-POST http://lb-9405cfd6.elb.localhost.localstack.cloud:4004/auth/login
+POST http://lb-9405cfd6.elb.localhost.localstack.cloud:4004/auth/login/*+
+-
+qewtyjukilo'3
+.0
 Content-Type: application/json
 
 {
